@@ -1,16 +1,16 @@
 <#
 		.SYNOPSIS
-		Changes the Maintenance Mode of a host.
+		Toggle the Maintenance Mode status of a host.
 
 		.DESCRIPTION
 		Check the status of the host. If it is in maintenance mode, it removes it from maintenance mode and vice versa.
 	
 		.EXAMPLE
-		.\ToggleMant.ps1 -VMHost 'Host'
+		.\ToggleMant.ps1 -VMHost 'host'
 		Toggle status of 'host'. Before request to connect to a VIServer
 		.EXAMPLE
-		.\ToggleMant.ps1 -Server 'VIServer' -VMHost 'Host'
-		Toggle status of 'host' o Server 'VIServer'
+		.\ToggleMant.ps1 -Server 'viserver' -VMHost 'host'
+		Toggle status of 'host' on Server 'viserver'
 
 		.NOTES
 		Author: Gustavo S. Ferreyro, gsferreyro@gmail.com
