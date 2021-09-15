@@ -29,7 +29,7 @@
 [CmdletBinding()]
 param(
 	[Parameter(Mandatory=$false)]
-		[string]$vCenter,
+		[string]$Server,
 	[Parameter(Mandatory=$false)]
 		[string]$Datacenter,
 	[Parameter(Mandatory=$false)]
@@ -44,26 +44,26 @@ $dtStart = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
 
 #region Connection
 $bConnected = $false
-if ((-Not $vCenter) -and (-Not $DefaultVIServers)) {
+if ((-Not $Server) -and (-Not $DefaultVIServers)) {
     Write-Host "`nNo server connected or passed by parameter.`nExiting..."
     Exit 2
-} elseif (($vCenter) -and (-Not $DefaultVIServers)) {
-    Write-Host "`nConnecting to $vCenter..."
-    Connect-VIServer $vCenter | Out-Null
-} elseif ((-Not $vCenter) -and ($DefaultVIServers)) {
+} elseif (($Server) -and (-Not $DefaultVIServers)) {
+    Write-Host "`nConnecting to $Server..."
+    Connect-VIServer $Server | Out-Null
+} elseif ((-Not $Server) -and ($DefaultVIServers)) {
     Write-Host "`nConnection detected on $($DefaultVIServer.Name) as default."
-    $vCenter = $DefaultVIServer.Name
-} elseif ($vCenter -and $DefaultVIServers) {
-    if ($vCenter -ne $($DefaultVIServer.Name)) {
-        Write-Host "`nConnection detected on server $($DefaultVIServer.Name).`nConnecting to $vCenter..."
-        Connect-VIServer $vCenter | Out-Null
+    $Server = $DefaultVIServer.Name
+} elseif ($Server -and $DefaultVIServers) {
+    if ($Server -ne $($DefaultVIServer.Name)) {
+        Write-Host "`nConnection detected on server $($DefaultVIServer.Name).`nConnecting to $Server..."
+        Connect-VIServer $Server | Out-Null
     } else {
         $bConnected = $true
     }
 }
 
-if (-Not ($DefaultVIServers | Where-Object {$_.Name -eq $vCenter})) {
-    Write-Host "`nUnable to connect to $vCenter.`nExiting..."
+if (-Not ($DefaultVIServers | Where-Object {$_.Name -eq $Server})) {
+    Write-Host "`nUnable to connect to $Server.`nExiting..."
     Exit 2
 }
 #endregion
@@ -78,7 +78,7 @@ if ($Datacenter) {
 } elseif ($VM) {
     $oFile = ".\DSs_VM_$VM.xlsx"
 } else {
-    $oFile = ".\DSs_Server_$vCenter.xlsx"
+    $oFile = ".\DSs_Server_$Server.xlsx"
 }
 
 if (Test-Path $oFile) {
@@ -109,7 +109,7 @@ if ($Datacenter) {
     Write-Host "Retrieving datastores of VM $VM"
     $oDSs = Get-VM $VM | Get-Datastore | Where-Object {$_.Name -notlike "VeeamBackup*" -and $_.Name -notlike "datastore*"} | Select-Object -Unique
 } else {
-    Write-Host "Retrieving datastores of Server $vCenter"
+    Write-Host "Retrieving datastores of Server $Server"
     $oDSs = Get-Datastore | Where-Object {$_.Name -notlike "VeeamBackup*" -and $_.Name -notlike "datastore*"} | Select-Object -Unique
 }
 
@@ -119,7 +119,7 @@ Write-Host "$nTot datastore/s retrieved"
 
 if ($nTot -le 0) {
     Write-Host "No DS found with the parameters entered:"
-    Write-Host "vCenter: $vCenter"
+    Write-Host "vCenter: $Server"
     Write-Host "Datacenter: $Datacenter"
     Write-Host "Cluster: $Cluster"
     Write-Host "VMHost: $VMHost"
@@ -148,7 +148,7 @@ foreach ($oDS in $oDSs) {
     } elseif ($VM) {
 	    $drDSs | Add-Member -MemberType NoteProperty -Name "VM" -Value $VM
     } else {
-	    $drDSs | Add-Member -MemberType NoteProperty -Name "vCenter" -Value $vCenter
+	    $drDSs | Add-Member -MemberType NoteProperty -Name "vCenter" -Value $Server
     }
 
     # Datastore
@@ -181,7 +181,7 @@ $dtDSs | Export-Excel -WorksheetName "Datastores" -Path $oFile -AutoSize -BoldTo
 
 #region Disconnecting
 if (-Not $bConnected) {
-    Disconnect-VIServer $vCenter -Confirm:$false
+    Disconnect-VIServer $Server -Confirm:$false
 }
 #endregion
 
