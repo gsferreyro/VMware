@@ -145,7 +145,6 @@ $i = 0
 foreach ($oDS in $oDSs) {
 	$i += 1
 	Write-Progress -Activity "Retrieving $oDS" -Status "Progress" -PercentComplete ($i/$oDSs.Count*100)
-    $bFound = $false
     $drDSs = New-Object PSObject
 
     # Datacenter, Cluster, VMHost, VM o Server, according to parameters entered
