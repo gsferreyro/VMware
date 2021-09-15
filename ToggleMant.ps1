@@ -68,14 +68,16 @@ if (-Not ($DefaultVIServers | Where-Object {$_.Name -eq $Server})) {
 }
 #endregion
 
-# Retrieving $VMHost
+#region Retrieving $VMHost
 try {
 	$oVMHost = Get-VMHost -Name $VMHost -ErrorAction Stop
 } catch {
 	Write-Host "Cannot be found $VMHost.`nExit"
 	Exit 2
 }
+#endregion
 
+#region Change state
 if ($oVMHost.ConnectionState -eq "Connected") {
 	Write-Host "`nPutting $VMHost into maintenance mode..." -NoNewline
 	$oVMHost | Set-VMHost -State Maintenance
@@ -102,8 +104,11 @@ if ($oVMHost.ConnectionState -eq "Connected") {
 }
 
 Write-Host "`nCurrent status: $($oVMHost.ConnectionState)"
+#endregion
 
+#region Disconnecting
 if (-Not $bConnected) {
 	Write-Host "`nDisconnecting from VIServer"
-	Disconnect-VIServer $oConnection -Confirm:$false
+    Disconnect-VIServer $Server -Confirm:$false
 }
+#endregion
