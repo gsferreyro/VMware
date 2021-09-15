@@ -32,18 +32,41 @@ param(
 		[string]$VMHost
 	)
 	
-# Connect to server
-Write-Host "`nConnecting to VIServer"
-try {
-	if ($Server) {
-		$oConnection = Connect-VIServer $Server -ErrorAction Stop
-	} else {
-		$oConnection = Connect-VIServer -ErrorAction Stop
-	}
-} catch {
-	Write-Host "Unable to connect to VIServer.`nExit"
-	Exit 2
+#region Connection
+$bConnected = $false
+if ((-Not $Server) -and (-Not $DefaultVIServers)) {
+    Write-Host "`nNo server connected or passed by parameter.`nExiting..."
+    Exit 2
+} elseif (($Server) -and (-Not $DefaultVIServers)) {
+    Write-Host "`nConnecting to $Server..."
+    try {
+        Connect-VIServer $Server -ErrorAction Stop | Out-Null
+    } catch {
+        Write-Host "Unable to connect to VIServer $($Server).`nExit"
+        Exit 2
+    }
+} elseif ((-Not $Server) -and ($DefaultVIServers)) {
+    Write-Host "`nConnection detected on $($DefaultVIServer.Name) as default."
+    $Server = $DefaultVIServer.Name
+} elseif ($Server -and $DefaultVIServers) {
+    if ($Server -ne $($DefaultVIServer.Name)) {
+        Write-Host "`nConnection detected on server $($DefaultVIServer.Name).`nConnecting to $Server..."
+        try {
+            Connect-VIServer $Server -ErrorAction Stop | Out-Null
+        } catch {
+            Write-Host "Unable to connect to VIServer $($Server).`nExit"
+            Exit 2
+        }
+    } else {
+        $bConnected = $true
+    }
 }
+
+if (-Not ($DefaultVIServers | Where-Object {$_.Name -eq $Server})) {
+    Write-Host "`nUnable to connect to $Server.`nExiting..."
+    Exit 2
+}
+#endregion
 
 # Retrieving $VMHost
 try {
@@ -80,5 +103,7 @@ if ($oVMHost.ConnectionState -eq "Connected") {
 
 Write-Host "`nCurrent status: $($oVMHost.ConnectionState)"
 
-Write-Host "`nDisconnecting from VIServer"
-Disconnect-VIServer $oConnection -Confirm:$false
+if (-Not $bConnected) {
+	Write-Host "`nDisconnecting from VIServer"
+	Disconnect-VIServer $oConnection -Confirm:$false
+}
