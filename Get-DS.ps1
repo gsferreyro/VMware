@@ -191,6 +191,7 @@ $dtDSs | Export-Excel -WorksheetName "Datastores" -Path $oFile -AutoSize -BoldTo
 
 #region Disconnecting
 if (-Not $bConnected) {
+	Write-Host "`nDisconnecting from VIServer"
     Disconnect-VIServer $Server -Confirm:$false
 }
 #endregion
