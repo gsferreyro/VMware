@@ -58,6 +58,7 @@ if ((-Not $Server) -and (-Not $DefaultVIServers)) {
 } elseif ((-Not $Server) -and ($DefaultVIServers)) {
     Write-Host "`nConnection detected on $($DefaultVIServer.Name) as default."
     $Server = $DefaultVIServer.Name
+    $bConnected = $true
 } elseif ($Server -and $DefaultVIServers) {
     if ($Server -ne $($DefaultVIServer.Name)) {
         Write-Host "`nConnection detected on server $($DefaultVIServer.Name).`nConnecting to $Server..."
@@ -79,24 +80,36 @@ if (-Not ($DefaultVIServers | Where-Object {$_.Name -eq $Server})) {
 #endregion
 
 #region Setting up the file
-if ($Datacenter) {
-    $oFile = ".\DSs_Datacenter_$Datacenter.xlsx"
-} elseif ($Cluster) {
-    $oFile = ".\DSs_Cluster_$Cluster.xlsx"
-} elseif ($VMHost) {
-    $oFile = ".\DSs_Host_$VMHost.xlsx"
-} elseif ($VM) {
-    $oFile = ".\DSs_VM_$VM.xlsx"
-} else {
-    $oFile = ".\DSs_Server_$Server.xlsx"
+$bExport = $true
+if (-Not (Test-Path .\export -PathType Container)) {
+    try {
+        mkdir -Path ".\export" -ErrorAction Stop | Out-Null
+    } catch {
+        Write-Host "Cannot create export directory. Check permissions."
+        $bExport = $false
+    }
 }
 
-if (Test-Path $oFile) {
-    try {
-        Remove-Item -Path $oFile -ErrorAction Stop
-    } catch {
-        Write-Host "The file $oFile could not be deleted. Is $oFile open?`nExiting..."
-        Exit 2
+if ($bExport) {
+    if ($Datacenter) {
+        $oFile = ".\export\DSs_Datacenter_$Datacenter.xlsx"
+    } elseif ($Cluster) {
+        $oFile = ".\export\DSs_Cluster_$Cluster.xlsx"
+    } elseif ($VMHost) {
+        $oFile = ".\export\DSs_Host_$VMHost.xlsx"
+    } elseif ($VM) {
+        $oFile = ".\export\DSs_VM_$VM.xlsx"
+    } else {
+        $oFile = ".\export\DSs_Server_$Server.xlsx"
+    }
+
+    if (Test-Path $oFile) {
+        try {
+            Remove-Item -Path $oFile -ErrorAction Stop
+        } catch {
+            Write-Host "The file $oFile could not be deleted. Is $oFile open?`nExiting..."
+            Exit 2
+        }
     }
 }
 #endregion
@@ -185,7 +198,11 @@ foreach ($oDS in $oDSs) {
 #endregion
 
 #region Exporting
-$dtDSs | Export-Excel -WorksheetName "Datastores" -Path $oFile -AutoSize -BoldTopRow -AutoFilter
+if ($bExport) {
+    $dtDSs | Export-Excel -WorksheetName "Datastores" -Path $oFile -AutoSize -BoldTopRow -AutoFilter
+} else {
+    Write-Output $dtDSs
+}
 #endregion
 
 #region Disconnecting
