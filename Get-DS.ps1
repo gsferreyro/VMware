@@ -197,7 +197,7 @@ foreach ($oDS in $oDSs) {
 }
 #endregion
 
-#region Exporting
+#region Exporting to xlsx
 if ($bExport) {
     $dtDSs | Export-Excel -WorksheetName "Datastores" -Path $oFile -AutoSize -BoldTopRow -AutoFilter
 } else {
