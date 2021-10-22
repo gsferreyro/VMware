@@ -40,22 +40,22 @@ param(
 		[string]$VM
     )
 
-function Get-Info {
-    return "[INFO] $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")"
+Import-Module "$PSScriptRoot\utils.psm1" -Force
+if (-not (Get-Module -Name utils)) {
+    Write-Host "Cannot import module utils, check if available in $($PSScriptRoot). Exiting..."
+    Exit 2
 }
-function Get-Warn {
-    return "[WARN] $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")"
+
+if (-not (Test-PowerCLI)) {
+    Write-Host "$(Get-Error) Please install PowerCLI module. Exiting..."
+    Exit 2
 }
-function Get-Error {
-    return "[ERROR] $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")"
-}
-                
-$dtStart = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
-Write-Host 
+             
+$dtStart = now
 
 #region Connection
 if ((-Not $Server) -and (-Not $DefaultVIServers)) {
-    Write-Host "$(Get-Error): No server connected or passed by parameter. Exiting..."
+    Write-Host "$(Get-Error) No server connected or passed by parameter. Exiting..."
     Exit 2
 } elseif ($Server) {
     $bConnected = $DefaultVIServers.Name.Contains($Server)
@@ -67,7 +67,7 @@ if ((-Not $Server) -and (-Not $DefaultVIServers)) {
 try {
     Connect-VIServer $Server -ErrorAction Stop | Out-Null
 } catch {
-    Write-Host "$(Get-Error): Unable to connect to VIServer $($Server). Exiting..."
+    Write-Host "$(Get-Error) Unable to connect to VIServer $($Server). Exiting..."
     Exit 2
 }
 #endregion
@@ -78,7 +78,7 @@ if (-Not (Test-Path .\export -PathType Container)) {
     try {
         mkdir -Path ".\export" -ErrorAction Stop | Out-Null
     } catch {
-        Write-Host "$(Get-Warn): Cannot create export directory. Check permissions."
+        Write-Host "$(Get-Warn) Cannot create export directory. Check permissions."
         $bExport = $false
     }
 }
@@ -100,8 +100,8 @@ if ($bExport) {
         try {
             Remove-Item -Path $oFile -ErrorAction Stop
         } catch {
-            Write-Host "$(Get-Error): The file $oFile could not be deleted. Is $oFile open?"
-            Write-Host "$(Get-Error): Exiting..."
+            Write-Host "$(Get-Error) The file $oFile could not be deleted. Is $oFile open?"
+            Write-Host "$(Get-Error) Exiting..."
             Exit 2
         }
     }
@@ -110,24 +110,24 @@ if ($bExport) {
 
 #region Retrieving datastores
 if ($Datacenter) {
-    Write-Host "$(Get-Info): Retrieving datastores of Datacenter of $Datacenter"
+    Write-Host "$(Get-Info) Retrieving datastores of Datacenter of $Datacenter"
     $oDSs = Get-Datacenter $Datacenter
 } elseif ($Cluster) {
     if ($Cluster.ToUpper() -ne "STANDALONE") {
-        Write-Host "$(Get-Info): Retrieving datastores of Cluster $Cluster"
+        Write-Host "$(Get-Info) Retrieving datastores of Cluster $Cluster"
         $oDSs = Get-Cluster $Cluster
     } else {
-        Write-Host "$(Get-Info): Retrieving datastores of STANDALONE VMHosts"
+        Write-Host "$(Get-Info) Retrieving datastores of STANDALONE VMHosts"
         $oDSs = Get-VMHost | Where-Object {$_.Parent.Name -eq 'host'}
     }
 } elseif ($VMHost) {
-    Write-Host "$(Get-Info): Retrieving datastores of VMHost $VMHost"
+    Write-Host "$(Get-Info) Retrieving datastores of VMHost $VMHost"
     $oDSs = Get-VMHost $VMHost
 } elseif ($VM) {
-    Write-Host "$(Get-Info): Retrieving datastores of VM $VM"
+    Write-Host "$(Get-Info) Retrieving datastores of VM $VM"
     $oDSs = Get-VM $VM
 } else {
-    Write-Host "$(Get-Info): Retrieving datastores of Server $Server"
+    Write-Host "$(Get-Info) Retrieving datastores of Server $Server"
 }
 if ($oDSs) {
     $oDSs = $oDSs | Get-Datastore | Where-Object {$_.Name -notlike "VeeamBackup*" -and $_.Name -notlike "datastore*" -and $_.Name -notlike "vsan*"} | Select-Object -Unique
@@ -139,13 +139,13 @@ $i = 0
 $nTot = $oDSs.Count
 Write-Host "$($nTot) datastore/s retrieved"
 
-if ($nTot) {
-    Write-Host "$(Get-Warn): No DS found with the parameters entered:"
-    Write-Host "$(Get-Warn): vCenter: $($Server)"
-    Write-Host "$(Get-Warn): Datacenter: $($Datacenter)"
-    Write-Host "$(Get-Warn): Cluster: $($Cluster)"
-    Write-Host "$(Get-Warn): VMHost: $($VMHost)"
-    Write-Host "$(Get-Warn): VM: $($VM)"
+if (-not $nTot) {
+    Write-Host "$(Get-Warn) No DS found with the parameters entered:"
+    Write-Host "$(Get-Warn) vCenter: $($Server)"
+    Write-Host "$(Get-Warn) Datacenter: $($Datacenter)"
+    Write-Host "$(Get-Warn) Cluster: $($Cluster)"
+    Write-Host "$(Get-Warn) VMHost: $($VMHost)"
+    Write-Host "$(Get-Warn) VM: $($VM)"
     Exit 0
 }
 #endregion
@@ -206,12 +206,12 @@ if ($bExport) {
 
 #region Disconnecting
 if (-Not $bConnected) {
-	Write-Host "$(Get-Info): Disconnecting from VIServer"
+	Write-Host "$(Get-Info) Disconnecting from VIServer"
     Disconnect-VIServer $Server -Confirm:$false
 }
 #endregion
 
 #region Reporting times
-$dtEnd = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
-Write-Host "$(Get-Info): Completed in $(New-TimeSpan -Start $dtStart -End $dtEnd)"
+$dtEnd = now
+Write-Host "$(Get-Info) Completed in $(New-TimeSpan -Start $dtStart -End $dtEnd)"
 #endregion
