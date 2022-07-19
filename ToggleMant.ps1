@@ -46,11 +46,11 @@ if ((-Not $Server) -and (-Not $DefaultVIServers)) {
         Exit 2
     }
 } elseif ((-Not $Server) -and ($DefaultVIServers)) {
-    Write-Host "`nConnection detected on $($DefaultVIServer.Name) as default."
+    Write-Host "`nConnection detected:\n$DefaultVIServers\nDefault:$($DefaultVIServer.Name)."
     $Server = $DefaultVIServer.Name
 } elseif ($Server -and $DefaultVIServers) {
-    if ($Server -ne $($DefaultVIServer.Name)) {
-        Write-Host "`nConnection detected on server $($DefaultVIServer.Name).`nConnecting to $Server..."
+    if (-not $Server.Contains($($DefaultVIServer.Name))) {
+        Write-Host "`nConnection detected on server $($DefaultVIServers.Name).`nConnecting to $Server..."
         try {
             Connect-VIServer $Server -ErrorAction Stop | Out-Null
         } catch {
